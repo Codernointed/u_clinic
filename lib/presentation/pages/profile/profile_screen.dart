@@ -259,7 +259,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildSection(String title, IconData icon, List<Widget> children) {
     return Container(
-        padding: const EdgeInsets.all(AppDimensions.spacingL),
+      padding: const EdgeInsets.all(AppDimensions.spacingL),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppDimensions.radiusM),
@@ -299,14 +299,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppDimensions.spacingS),
       child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           SizedBox(
             width: 120,
             child: Text(
               label,
               style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -317,10 +317,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.textPrimary,
               ),
-                    ),
-                  ),
-                ],
-              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
