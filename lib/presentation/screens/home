@@ -1,0 +1,490 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:u_clinic/core/theme/app_colors.dart';
+import 'package:u_clinic/core/theme/app_typography.dart';
+import 'package:u_clinic/presentation/screens/library_screen.dart';
+import 'package:u_clinic/presentation/screens/news_screen.dart';
+import 'package:u_clinic/presentation/screens/settings_screen.dart';
+import 'package:u_clinic/presentation/widgets/carousel_indicator.dart';
+import 'package:u_clinic/presentation/widgets/emergency_section.dart';
+import 'package:u_clinic/presentation/widgets/health_condition_card.dart';
+import 'package:u_clinic/presentation/widgets/health_tips_card.dart';
+import 'package:u_clinic/presentation/widgets/home/home_app_bar.dart';
+import 'package:u_clinic/presentation/widgets/inspiration_card.dart';
+import 'package:u_clinic/presentation/widgets/myth_card.dart';
+import 'package:u_clinic/presentation/widgets/news_alert_card.dart';
+import 'package:u_clinic/presentation/widgets/section_header.dart';
+import 'package:u_clinic/presentation/widgets/tool_card.dart';
+
+// Mock data models
+class NewsAlert {
+  final String title;
+  final String time;
+  final String imagePath;
+  NewsAlert({required this.title, required this.time, required this.imagePath});
+}
+
+class HealthCondition {
+  final String name;
+  final String imagePath;
+  HealthCondition({required this.name, required this.imagePath});
+}
+
+class Inspiration {
+  final String title;
+  final String subtitle;
+  final String imagePath;
+  Inspiration({required this.title, required this.subtitle, required this.imagePath});
+}
+
+class HealthTip {
+  final String title;
+  final String imagePath;
+  HealthTip({required this.title, required this.imagePath});
+}
+
+class Myth {
+  final String title;
+  final String imagePath;
+  Myth({required this.title, required this.imagePath});
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 0;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  late final List<Widget> _widgetOptions;
+
+  @override
+  void initState() {
+    super.initState();
+    _widgetOptions = <Widget>[
+      NewHomePageContent(onNavigate: _onItemTapped),
+      const LibraryScreen(),
+      const NewsScreen(),
+      const SettingsScreen(),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _widgetOptions.elementAt(_selectedIndex),
+      bottomNavigationBar: BottomNavigationBar(
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: SvgPicture.asset('assets/icons/home_inactive.svg'), label: 'Home'),
+          BottomNavigationBarItem(icon: SvgPicture.asset('assets/icons/library_inactive.svg'), label: 'Library'),
+          BottomNavigationBarItem(icon: SvgPicture.asset('assets/icons/news_inactive.svg'), label: 'News'),
+          // BottomNavigationBarItem(icon: SvgPicture.asset('assets/icons/discover_inactive.svg'), label: 'Discover'),
+          BottomNavigationBarItem(icon: SvgPicture.asset('assets/icons/settings_inactive.svg'), label: 'Settings'),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textTertiary,
+        onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
+      ),
+    );
+  }
+}
+
+class NewHomePageContent extends StatefulWidget {
+  final Function(int) onNavigate;
+
+  const NewHomePageContent({super.key, required this.onNavigate});
+
+  @override
+  State<NewHomePageContent> createState() => _NewHomePageContentState();
+}
+
+class _NewHomePageContentState extends State<NewHomePageContent> {
+  final PageController _newsCarouselController = PageController();
+  int _currentNewsPage = 0;
+
+  final List<NewsAlert> _newsAlerts = [
+    NewsAlert(
+        title: 'Global Summit on Non-Communicable Diseases',
+        time: '8 mins ago',
+        imagePath: 'assets/images/news1.png'),
+    NewsAlert(
+        title: 'New Breakthrough in Cancer Treatment',
+        time: '30 mins ago',
+        imagePath: 'assets/images/news2.png'),
+    NewsAlert(
+        title: 'Mental Health Awareness Week Begins',
+        time: '1 hour ago',
+        imagePath: 'assets/images/news3.png'),
+  ];
+
+  final List<HealthCondition> _healthConditions = [
+    HealthCondition(name: 'Headache', imagePath: 'assets/images/headache.png'),
+    HealthCondition(name: 'Diabetes', imagePath: 'assets/images/diabetes.png'),
+    HealthCondition(name: 'Exercise', imagePath: 'assets/images/exercise.png'),
+    HealthCondition(name: 'Sleep', imagePath: 'assets/images/sleep.png'),
+    HealthCondition(name: 'Nutrition', imagePath: 'assets/images/nutrition.png'),
+  ];
+
+  final List<Inspiration> _inspirations = [
+    Inspiration(
+      title: 'You are stronger than you think',
+      subtitle: 'A story of resilience and recovery from a chronic illness.',
+      imagePath: 'assets/images/inspiration1.png',
+    ),
+    Inspiration(
+      title: 'The power of a positive mindset',
+      subtitle: 'How optimism can improve your health outcomes.',
+      imagePath: 'assets/images/inspiration2.png',
+    ),
+  ];
+
+  final List<HealthTip> _healthTips = [
+    HealthTip(title: 'Stay Hydrated', imagePath: 'assets/images/health_tip1.png'),
+    HealthTip(title: 'Eat a Balanced Diet', imagePath: 'assets/images/health_tip2.png'),
+    HealthTip(title: 'Get Regular Exercise', imagePath: 'assets/images/health_tip3.png'),
+  ];
+
+  final List<Myth> _myths = [
+    Myth(title: 'Cracking your knuckles gives you arthritis',
+        imagePath: 'assets/images/myth1.png'),
+    Myth(title: 'You should drink 8 glasses of water a day',
+        imagePath: 'assets/images/myth2.png'),
+    Myth(title: 'A hangover is caused by dehydration',
+        imagePath: 'assets/images/myth3.png'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: const HomeAppBar(),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildNewsCarouselSection(),
+            const SizedBox(height: 24),
+            const EmergencySection(),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildGeneralAilmentsSection(),
+            ),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildInspirationsSection(),
+            ),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildHealthTipsSection(),
+            ),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildExposingMythsSection(),
+            ),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildMedWeekSection(),
+            ),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildLifestyleToolsSection(),
+            ),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildFindDoctorSection(),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNewsCarouselSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: SectionHeader(title: 'News Alert'),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 180,
+          child: PageView.builder(
+            controller: _newsCarouselController,
+            itemCount: _newsAlerts.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentNewsPage = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              final alert = _newsAlerts[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: NewsAlertCard(
+                  title: alert.title,
+                  description: alert.time,
+                  imageUrl: alert.imagePath,
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (_newsAlerts.length > 1)
+          Center(
+            child: CarouselIndicator(
+              itemCount: _newsAlerts.length,
+              currentIndex: _currentNewsPage,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildGeneralAilmentsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title: 'General Ailments'),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _healthConditions.length,
+            itemBuilder: (context, index) {
+              final condition = _healthConditions[index];
+              return Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: HealthConditionCard(
+                  title: condition.name, // Corrected: was 'name'
+                  imagePath: condition.imagePath,
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInspirationsSection() {
+    return Column(
+      // crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Inspirations',
+              style: AppTypography.heading3, // Corrected: was h3
+            ),
+            TextButton(
+              onPressed: () {},
+              child: Row(
+                children: [
+                  Text(
+                    'See all',
+                    style: AppTypography.bodyLarge.copyWith(color: AppColors.primary), // Corrected: was bodyText1
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.arrow_forward, color: AppColors.primary, size: 16),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 280,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _inspirations.length,
+            itemBuilder: (context, index) {
+              return InspirationCard(
+                title: _inspirations[index].title,
+                subtitle: _inspirations[index].subtitle,
+                imagePath: _inspirations[index].imagePath,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHealthTipsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title: 'Health Tips'),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 150,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _healthTips.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: HealthTipsCard(
+                  title: _healthTips[index].title,
+                  imagePath: _healthTips[index].imagePath,
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExposingMythsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title: 'Exposing Myths'),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 180,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _myths.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: MythCard(title: _myths[index].title, imagePath: _myths[index].imagePath),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMedWeekSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title: 'Oziza MedWeek Video Highlight'),
+        const SizedBox(height: 8),
+        Container(
+          height: 200,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            image: const DecorationImage(
+              image: AssetImage('assets/images/full-shot-friends-having-fun-together 1.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: const Center(
+            child: Icon(Icons.play_circle_fill, color: Colors.white, size: 60),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLifestyleToolsSection() {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title: 'Lifestyle Tools'),
+        SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children:  [
+            ToolCard(title: 'BMI', iconPath: 'assets/images/headache.svg'),
+            ToolCard(title: 'Ovulation', iconPath: 'assets/images/diabetes.svg'),
+            ToolCard(title: 'EDD', iconPath: 'assets/images/exercise.svg'),
+            ToolCard(title: 'Drug Reminder', iconPath: 'assets/images/sleep.svg'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFindDoctorSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Find a Doctor or Hospital',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                const Text('Search for doctors, hospitals, and specialists near you'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    widget.onNavigate(3);
+                  },
+                  child: const Text('Search'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SvgPicture.asset('assets/images/doctors_illustration.svg', height: 100),
+        ],
+      ),
+    );
+  }
+}
+
+class ToolCard extends StatelessWidget {
+  final String title;
+  final String iconPath;
+
+  const ToolCard({super.key, required this.title, required this.iconPath});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: SvgPicture.asset(iconPath, height: 40, width: 40),
+        ),
+        const SizedBox(height: 8),
+        Text(title, style: const TextStyle(fontSize: 12)),
+      ],
+    );
+  }
+}

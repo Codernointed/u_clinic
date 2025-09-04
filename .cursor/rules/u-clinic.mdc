@@ -1,0 +1,172 @@
+---
+alwaysApply: false
+---
+Product Requirements Document (PRD) 
+Project Title: Interactive E-Health Application for Universities – A Case Study of UMaT 
+Prepared by: Christopher Enimil 
+Date: 9th August 2025 
+Version: 1.1 
+1. Executive Summary 
+The Interactive E-Health Application for UMaT is a digital healthcare platform that streamlines 
+campus health services. It provides students, staff, and medical personnel with tools for booking 
+appointments, conducting secure consultations, accessing medical records, and receiving health 
+updates — all aimed at improving healthcare accessibility and efficiency on campus. 
+2. Goals & Objectives 
+Goals: 
+• Enhance accessibility to healthcare services on campus. 
+• Digitize and centralize patient data for better record-keeping. 
+• Promote preventive health awareness through campaigns and tips. 
+Objectives: 
+• Provide an easy-to-use interface for booking and managing clinic visits. 
+• Enable secure real-time and asynchronous consultations. 
+• Facilitate real-time notifications for appointments, results, and alerts. 
+3. Scope 
+In Scope (Phase 1): 
+• Web and Android mobile app (built using Flutter). 
+• Role-based access for patients, medical staff, and administrators. 
+• Appointment scheduling, rescheduling, and cancellations. 
+• Secure e-consultations (video, voice, text). 
+• Medical record storage and retrieval. 
+• Push notifications for health tips and reminders. 
+• Emergency contact functionality. 
+Out of Scope (Phase 1): 
+• National health insurance integration. 
+• AI-driven diagnosis system. 
+4. User Personas 
+1. Student/Staff (Patient) – Wants quick access to medical services, health records, 
+and online consultations. 
+2. Medical Staff – Needs tools for patient scheduling, records management, and 
+remote consultations. 
+3. Administrator – Oversees usage, manages accounts, monitors system health, and 
+generates reports. 
+5. Features 
+• User Registration & Authentication (with encryption and optional 2FA). 
+• Appointment Booking System (search, view availability, book, reschedule). 
+• E-Consultations (video/voice/text). 
+• Medical Records Management (view prescriptions, test results, past visits). 
+• Prescription Handling (upload, view, verify). 
+• Notifications & Alerts (appointments, campaigns, emergencies). 
+• Health Education Module (articles, tips, event updates). 
+• Emergency Access (quick call to clinic). 
+6. Functional Requirements 
+• Multi-platform (Web & Android) via Flutter. 
+• Role-based permissions and dashboards. 
+• AES-encrypted database for patient health information. 
+• Calendar integration for availability tracking. 
+• In-app video/voice call functionality. 
+• PDF export for reports and prescriptions. 
+7. Non-Functional Requirements 
+• Load time under 3 seconds. 
+• 500+ concurrent user handling capacity. 
+• HIPAA-inspired security measures. 
+• Simple UI/UX for non-technical users. 
+• Scalable architecture for future upgrades. 
+8. Success Metrics 
+• 80% of appointments booked digitally within 6 months. 
+• 30% reduction in average clinic waiting times. 
+• ≥70% positive satisfaction rating in the first post-launch survey. 
+9. Timeline 
+Phase 
+Duration 
+Requirements Gathering 2 weeks 
+Deliverables 
+Final PRD 
+UI/UX Design 
+Development (MVP) 
+Testing 
+Deployment 
+Feedback & Iteration 
+3 weeks 
+8 weeks 
+3 weeks 
+1 week 
+Wireframes, Mockups 
+Core features 
+QA report 
+Live version 
+Continuous Updates 
+10. Risks & Mitigation 
+• Data Breaches: Implement encryption, access logs, and strict role-based 
+permissions. 
+• Low User Adoption: Conduct awareness programs and integrate feedback loops. 
+• System Downtime: Backup servers and scheduled maintenance. 
+11. User Flows 
+11.1 Patient User Flow 
+1. Registration/Login → Enter student/staff ID → Verify via email/SMS → Access 
+dashboard. 
+2. Book Appointment → Select department/doctor → View available slots → Confirm 
+booking → Receive confirmation notification. 
+3. Attend Consultation → Receive reminder notification → Join video/voice/text 
+session at scheduled time → Doctor updates records. 
+4. Access Medical Records → Navigate to “My Records” → View past diagnoses, 
+prescriptions, and results → Download if needed. 
+5. Receive Health Tips → Push notifications appear → Read via Health Education 
+module. 
+6. Emergency Contact → Tap emergency button → Direct call to campus clinic. 
+11.2 Medical Staff User Flow 
+1. Login → Access role-specific dashboard. 
+2. View Appointments → Daily/weekly schedule displayed. 
+3. Conduct Consultation → Access patient history → Join video/voice/text session → 
+Update notes and prescriptions. 
+4. Manage Records → Upload prescriptions → Input test results → Save securely in 
+database. 
+5. Send Notifications → Post health tips, appointment updates, or urgent alerts. 
+11.3 Administrator User Flow 
+1. Login → Access full dashboard. 
+2. Manage Users → Create/modify/delete accounts for staff and students. 
+3. System Monitoring → View usage stats, appointment trends, and performance 
+metrics. 
+4. Generate Reports → Export analytics for university management. 
+5. Manage Content → Upload articles, health tips, and event announcements. 
+12. System Architecture & Data Flow 
+12.1 System Architecture Overview 
+• Presentation Layer: Flutter (single codebase for Android, iOS, and Web). 
+• Application Layer: Node.js (Express) or Django REST API for business logic and 
+integration. 
+• Data Layer: PostgreSQL/MySQL for health records, encrypted cloud/local storage 
+for documents. 
+12.2 Data Flow (Example) 
+1. User logs in via Flutter app → Data sent to backend via HTTPS. 
+2. Backend authenticates user, checks role, and grants access. 
+3. Booking requests are validated, stored in database, and confirmed via push 
+notification. 
+4. Consultations handled via integrated video call service. 
+5. Medical records accessed securely and can be exported as PDF. 
+12.3 Security Measures 
+• AES-256 encryption for stored data. 
+• SSL/TLS for data transmission. 
+• Role-Based Access Control (RBAC). 
+• Audit logs for all system actions. 
+12.4 Technology Stack (Proposed) 
+Layer 
+Frontend 
+Backend 
+Database 
+Technology 
+Flutter (cross-platform: Android, iOS, Web) 
+Node.js (Express) / Django REST 
+PostgreSQL / MySQL 
+Video Calls WebRTC / Twilio 
+Layer 
+Technology 
+Notifications Firebase Cloud Messaging (FCM) 
+Hosting 
+AWS / Azure / On-premises university server 
+Appendix – Sample Wireframes 
+A1. Login Screen 
+• Fields: Email/ID, password. 
+• Buttons: Login, Forgot Password, Register. 
+• Redirects based on user role. 
+A2. Patient Dashboard 
+• Cards: Book Appointment, Medical Records, E-Consultation, Prescriptions, Health 
+Tips, Emergency Call. 
+A3. Appointment Booking Screen 
+• Steps: Select doctor, pick date/time, confirm booking, receive notification. 
+A4. E-Consultation Screen 
+• Video/voice area, chat panel, toolbar for call controls and file sharing. 
+A5. Medical Records Screen 
+• Filter by date/type, view details, download PDF. 
+A6. Admin Dashboard 
+• Manage users, system reports, upload health content, adjust settings. 
+
+Be updating the plan.md, do not create new mds to write whats done, or yet to do, every journal or notes should be done in plan.md
