@@ -759,6 +759,8 @@ Create comprehensive Supabase tables for all entities:
 11. ✅ **NEW: Implemented REAL video calling using Agora RTC Engine**
 12. ✅ **NEW: Added proper video call controls (mute, video toggle, end call)**
 13. ✅ **NEW: Integrated real-time video streams with local and remote views**
+14. ✅ **NEW: Added patient video call joining from dashboard**
+15. ✅ **NEW: Implemented live appointment detection and video call buttons**
 
 #### **🎯 ACHIEVEMENT**: Zero Mock Data in Production Features!
 The app now uses **real database persistence** for all core functionality. This is a **premium-level implementation** that rivals commercial healthcare platforms.
