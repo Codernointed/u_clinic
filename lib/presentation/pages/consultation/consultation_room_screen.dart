@@ -195,6 +195,7 @@ class _ConsultationRoomScreenState extends State<ConsultationRoomScreen>
           id: '',
           chatId: _currentChatId!,
           senderId: state.user.id,
+          senderName: '${state.user.firstName} ${state.user.lastName}',
           messageType: 'text',
           content: message,
           isRead: false,

@@ -9,6 +9,8 @@ class ChatMessage {
   final String chatId;
   @JsonKey(name: 'sender_id')
   final String senderId;
+  @JsonKey(name: 'sender_name')
+  final String senderName;
   @JsonKey(name: 'message_type')
   final String messageType;
   final String content;
@@ -25,6 +27,7 @@ class ChatMessage {
     required this.id,
     required this.chatId,
     required this.senderId,
+    required this.senderName,
     required this.messageType,
     required this.content,
     this.fileAttachments,
@@ -53,6 +56,7 @@ class ChatMessage {
       id: id ?? this.id,
       chatId: chatId ?? this.chatId,
       senderId: senderId ?? this.senderId,
+      senderName: senderName ?? this.senderName,
       messageType: messageType ?? this.messageType,
       content: content ?? this.content,
       fileAttachments: fileAttachments ?? this.fileAttachments,

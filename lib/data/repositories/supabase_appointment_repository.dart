@@ -12,6 +12,37 @@ class SupabaseAppointmentRepository implements AppointmentRepository {
   SupabaseAppointmentRepository(this._supabaseService);
 
   // Resolve a provided identifier (doctor table id or user id) to the
+  // Get all doctor IDs associated with a user (handles multiple doctor records)
+  Future<List<String>> _getAllDoctorIdsForUser(String doctorIdOrUserId) async {
+    try {
+      // Try as doctors.id first
+      final byId = await _supabaseService
+          .from('doctors')
+          .select('id')
+          .eq('id', doctorIdOrUserId)
+          .maybeSingle();
+      if (byId != null && byId['id'] != null) {
+        return [byId['id'] as String];
+      }
+
+      // Try as users.id → map to all doctors.id for this user
+      final byUser = await _supabaseService
+          .from('doctors')
+          .select('id')
+          .eq('user_id', doctorIdOrUserId);
+
+      if (byUser.isNotEmpty) {
+        return byUser.map((e) => e['id'] as String).toList();
+      }
+
+      // Fall back to provided id if no mapping found
+      return [doctorIdOrUserId];
+    } catch (e) {
+      // On any error, fall back to provided id
+      return [doctorIdOrUserId];
+    }
+  }
+
   // canonical doctors.id used in the appointments table
   Future<String> _resolveDoctorId(String doctorIdOrUserId) async {
     try {
@@ -305,22 +336,27 @@ class SupabaseAppointmentRepository implements AppointmentRepository {
     try {
       final dateStr = date.toIso8601String().split('T')[0];
       print('🔍 Fetching appointments for doctor: $doctorId on $dateStr');
-      final resolvedDoctorId = await _resolveDoctorId(doctorId);
+
+      // Get all doctor IDs associated with this user
+      final doctorIds = await _getAllDoctorIdsForUser(doctorId);
+      print('🔍 Found ${doctorIds.length} doctor IDs for user: $doctorIds');
 
       var query = _supabaseService
           .from('appointments')
           .select()
-          .eq('doctor_id', resolvedDoctorId)
-          // Show today and upcoming (not past)
-          .gte('appointment_date', dateStr)
-          // Hide cancelled in the schedule view
+          .inFilter('doctor_id', doctorIds)
+          // Show ALL appointments assigned to this doctor (past, present, future)
+          // Only exclude completed and cancelled appointments
+          .neq('status', AppointmentStatus.completed.value)
           .neq('status', AppointmentStatus.cancelled.value);
 
       if (status != null) {
         query = query.eq('status', status.value);
       }
 
-      final response = await query.order('appointment_time', ascending: true);
+      final response = await query
+          .order('appointment_date', ascending: true)
+          .order('appointment_time', ascending: true);
 
       print('📱 Found ${response.length} appointments for doctor');
 

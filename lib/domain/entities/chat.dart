@@ -9,6 +9,10 @@ class Chat {
   final String patientId;
   @JsonKey(name: 'patient_name')
   final String patientName;
+  @JsonKey(name: 'staff_id')
+  final String? staffId;
+  @JsonKey(name: 'staff_name')
+  final String? staffName;
   @JsonKey(name: 'chat_type')
   final String chatType; // consultation, support, emergency
   @JsonKey(name: 'created_at')
@@ -23,6 +27,8 @@ class Chat {
     required this.id,
     required this.patientId,
     required this.patientName,
+    this.staffId,
+    this.staffName,
     required this.chatType,
     required this.createdAt,
     this.lastMessageAt,
@@ -39,6 +45,8 @@ class Chat {
     String? id,
     String? patientId,
     String? patientName,
+    String? staffId,
+    String? staffName,
     String? chatType,
     DateTime? createdAt,
     DateTime? lastMessageAt,
@@ -50,6 +58,8 @@ class Chat {
       id: id ?? this.id,
       patientId: patientId ?? this.patientId,
       patientName: patientName ?? this.patientName,
+      staffId: staffId ?? this.staffId,
+      staffName: staffName ?? this.staffName,
       chatType: chatType ?? this.chatType,
       createdAt: createdAt ?? this.createdAt,
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,

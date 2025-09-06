@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:u_clinic/core/routes/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
@@ -104,6 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: AppDimensions.spacingL),
             _buildSecuritySettings(user),
             const SizedBox(height: AppDimensions.spacingXL),
+            _buildLogoutButton(),
           ],
         ),
       ),
@@ -291,6 +293,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: AppDimensions.spacingM),
           ...children,
         ],
+      ),
+    );
+  }
+  Widget _buildLogoutButton() {
+    return Container(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => Navigator.pushReplacementNamed(
+          context,
+          AppRouter.healthcareSignIn,
+        ),
+        child: const Text('Logout'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+          ),
+        ),
       ),
     );
   }

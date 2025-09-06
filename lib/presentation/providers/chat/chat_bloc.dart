@@ -274,10 +274,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       messages,
     ) {
       print('🔄 Real-time message update: ${messages.length} messages');
-      // Ignore empty realtime payloads so we don't clear the thread
-      if (messages.isEmpty) {
-        return;
-      }
+      // Always emit new messages, even if empty (to handle deletions)
       if (!isClosed) {
         emit(MessagesLoaded(messages, chatId));
       }

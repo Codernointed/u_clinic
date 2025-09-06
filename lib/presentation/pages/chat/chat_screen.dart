@@ -11,6 +11,7 @@ import '../../providers/auth/auth_bloc.dart';
 import '../../providers/auth/auth_state.dart';
 import '../../../domain/entities/chat.dart';
 import '../../../domain/entities/chat_message.dart';
+import '../../../domain/enums/user_role.dart';
 
 class ChatScreen extends StatefulWidget {
   final Chat chat;
@@ -71,6 +72,20 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildAppBarTitle() {
+    // Get current user role to show appropriate information
+    final authState = context.read<AuthBloc>().state;
+    bool isStaff = false;
+
+    if (authState is AuthAuthenticated) {
+      isStaff =
+          authState.user.role == UserRole.staff ||
+          authState.user.role == UserRole.admin;
+    }
+
+    final displayName = isStaff
+        ? widget.chat.patientName
+        : (widget.chat.staffName ?? 'Healthcare Staff');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -80,7 +95,7 @@ class _ChatScreenState extends State<ChatScreen> {
           style: AppTypography.heading5.copyWith(color: Colors.white),
         ),
         Text(
-          '${widget.chat.patientName} • ${widget.chat.chatType}',
+          '$displayName • ${widget.chat.chatType}',
           style: AppTypography.caption.copyWith(color: Colors.white70),
         ),
       ],
@@ -88,6 +103,20 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildChatHeader() {
+    // Get current user role to show appropriate information
+    final authState = context.read<AuthBloc>().state;
+    bool isStaff = false;
+
+    if (authState is AuthAuthenticated) {
+      isStaff =
+          authState.user.role == UserRole.staff ||
+          authState.user.role == UserRole.admin;
+    }
+
+    final displayName = isStaff
+        ? widget.chat.patientName
+        : (widget.chat.staffName ?? 'Healthcare Staff');
+
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spacingM),
       decoration: BoxDecoration(
@@ -99,9 +128,7 @@ class _ChatScreenState extends State<ChatScreen> {
           CircleAvatar(
             backgroundColor: AppColors.primary,
             child: Text(
-              widget.chat.patientName.isNotEmpty
-                  ? widget.chat.patientName[0].toUpperCase()
-                  : 'U',
+              displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
               style: AppTypography.bodyMedium.copyWith(color: Colors.white),
             ),
           ),
@@ -110,7 +137,7 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.chat.patientName, style: AppTypography.heading5),
+                Text("Dr. $displayName", style: AppTypography.heading5),
                 const SizedBox(height: AppDimensions.spacingXS),
                 Text(widget.chat.chatType, style: AppTypography.caption),
               ],
@@ -250,6 +277,45 @@ class _ChatScreenState extends State<ChatScreen> {
 
     final isMyMessage = message.senderId == currentUserId;
 
+    // Get display name for the sender
+    String senderDisplayName = 'Unknown';
+    String senderInitial = 'U';
+
+    if (isMyMessage) {
+      // Current user's message
+      if (authState is AuthAuthenticated) {
+        senderDisplayName =
+            '${authState.user.firstName} ${authState.user.lastName}';
+        senderInitial = authState.user.firstName.isNotEmpty
+            ? authState.user.firstName.substring(0, 1).toUpperCase()
+            : 'U';
+      }
+    } else {
+      // Other user's message - get name from chat
+      final authState = context.read<AuthBloc>().state;
+      bool isStaff = false;
+
+      if (authState is AuthAuthenticated) {
+        isStaff =
+            authState.user.role == UserRole.staff ||
+            authState.user.role == UserRole.admin;
+      }
+
+      if (isStaff) {
+        // Current user is staff, so sender is patient
+        senderDisplayName = widget.chat.patientName;
+        senderInitial = widget.chat.patientName.isNotEmpty
+            ? widget.chat.patientName.substring(0, 1).toUpperCase()
+            : 'P';
+      } else {
+        // Current user is patient, so sender is staff
+        senderDisplayName = widget.chat.staffName ?? 'Healthcare Staff';
+        senderInitial = senderDisplayName.isNotEmpty
+            ? senderDisplayName.substring(0, 1).toUpperCase()
+            : 'H';
+      }
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: AppDimensions.spacingM),
       child: Row(
@@ -262,9 +328,7 @@ class _ChatScreenState extends State<ChatScreen> {
               radius: 16,
               backgroundColor: AppColors.primary,
               child: Text(
-                message.senderId.isNotEmpty
-                    ? message.senderId.substring(0, 1).toUpperCase()
-                    : 'U',
+                senderInitial,
                 style: AppTypography.bodySmall.copyWith(color: Colors.white),
               ),
             ),
@@ -285,9 +349,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   if (!isMyMessage) ...[
                     Text(
-                      isMyMessage
-                          ? 'You'
-                          : 'User ${message.senderId.substring(0, math.min(8, message.senderId.length))}',
+                      senderDisplayName,
                       style: AppTypography.caption.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -319,9 +381,7 @@ class _ChatScreenState extends State<ChatScreen> {
               radius: 16,
               backgroundColor: AppColors.primary,
               child: Text(
-                message.senderId.isNotEmpty
-                    ? message.senderId.substring(0, 1).toUpperCase()
-                    : 'U',
+                senderInitial,
                 style: AppTypography.bodySmall.copyWith(color: Colors.white),
               ),
             ),
@@ -389,10 +449,17 @@ class _ChatScreenState extends State<ChatScreen> {
       senderId = authState.user.id;
     }
 
+    // Get sender name
+    String senderName = 'User';
+    if (authState is AuthAuthenticated) {
+      senderName = '${authState.user.firstName} ${authState.user.lastName}';
+    }
+
     final message = ChatMessage(
       id: '', // Will be set by the server
       chatId: widget.chat.id,
       senderId: senderId,
+      senderName: senderName,
       messageType: 'text',
       content: content,
       isRead: false,

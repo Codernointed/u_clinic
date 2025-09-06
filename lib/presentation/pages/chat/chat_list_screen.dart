@@ -20,14 +20,26 @@ class ChatListScreen extends StatefulWidget {
   State<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-class _ChatListScreenState extends State<ChatListScreen> {
+class _ChatListScreenState extends State<ChatListScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
   String _currentUserId = '';
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadUserInfo();
+    context.read<ChatBloc>().add(LoadChats(_currentUserId));
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed && _currentUserId.isNotEmpty) {
+      // Refresh chats when app comes back to foreground
+      context.read<ChatBloc>().add(LoadChats(_currentUserId));
+    }
   }
 
   void _loadUserInfo() {
@@ -52,6 +64,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
@@ -71,6 +84,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
           // Force rebuild when chats are loaded
           if (state is ChatsLoaded) {
             print('🔄 Forcing UI rebuild with ${state.chats.length} chats');
+            // Force a rebuild by calling setState
+            if (mounted) {
+              setState(() {});
+            }
           }
         },
         builder: (context, chatState) => Scaffold(
@@ -80,6 +97,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () {
+                  if (_currentUserId.isNotEmpty) {
+                    context.read<ChatBloc>().add(LoadChats(_currentUserId));
+                  }
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.search),
                 onPressed: _showSearch,
@@ -214,14 +239,20 @@ class _ChatListScreenState extends State<ChatListScreen> {
         leading: CircleAvatar(
           backgroundColor: AppColors.primary,
           child: Text(
-            chat.patientName.isNotEmpty
-                ? chat.patientName[0].toUpperCase()
+            (isStaff
+                        ? chat.patientName
+                        : (chat.staffName ?? 'Healthcare Staff'))
+                    .isNotEmpty
+                ? (isStaff
+                          ? chat.patientName
+                          : (chat.staffName ?? 'Healthcare Staff'))[0]
+                      .toUpperCase()
                 : 'U',
             style: AppTypography.bodyMedium.copyWith(color: Colors.white),
           ),
         ),
         title: Text(
-          isStaff ? 'Patient: ${chat.patientName}' : chat.patientName,
+          isStaff ? chat.patientName : (chat.staffName ?? 'Healthcare Staff'),
           style: AppTypography.heading5,
         ),
         subtitle: Column(
@@ -473,14 +504,19 @@ class _CreateChatDialogState extends State<_CreateChatDialog> {
   String _selectedChatType = 'consultation';
   String? _selectedPatientId;
   String? _selectedPatientName;
+  String? _selectedDoctorId;
+  String? _selectedDoctorName;
   bool _isCreating = false;
   List<Map<String, String>> _patients = [];
+  List<Map<String, String>> _doctors = [];
   bool _isLoadingPatients = true;
+  bool _isLoadingDoctors = true;
 
   @override
   void initState() {
     super.initState();
     _loadPatients();
+    _loadDoctors();
   }
 
   @override
@@ -525,6 +561,46 @@ class _CreateChatDialogState extends State<_CreateChatDialog> {
             {'id': 'demo2', 'name': 'Demo Patient 2'},
           ];
           _isLoadingPatients = false;
+        });
+      }
+    }
+  }
+
+  void _loadDoctors() async {
+    try {
+      // Load real doctors from Supabase
+      final response = await SupabaseService.instance
+          .from('users')
+          .select('id, first_name, last_name')
+          .eq('role', 'staff')
+          .limit(50);
+
+      final doctors = (response as List)
+          .map(
+            (user) => {
+              'id': user['id'] as String,
+              'name': '${user['first_name']} ${user['last_name']}' as String,
+            },
+          )
+          .toList();
+
+      if (mounted) {
+        setState(() {
+          _doctors = doctors;
+          _isLoadingDoctors = false;
+        });
+      }
+
+      print('✅ Loaded ${doctors.length} real doctors for chat');
+    } catch (e) {
+      print('❌ Error loading doctors: $e');
+      if (mounted) {
+        setState(() {
+          _doctors = [
+            {'id': 'demo1', 'name': 'Dr. Smith'},
+            {'id': 'demo2', 'name': 'Dr. Johnson'},
+          ];
+          _isLoadingDoctors = false;
         });
       }
     }
@@ -576,6 +652,39 @@ class _CreateChatDialogState extends State<_CreateChatDialog> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please select a patient';
+                    }
+                    return null;
+                  },
+                ),
+              const SizedBox(height: AppDimensions.spacingM),
+            ] else ...[
+              // Patient selecting doctor
+              if (_isLoadingDoctors)
+                const CircularProgressIndicator()
+              else
+                DropdownButtonFormField<String>(
+                  value: _selectedDoctorId,
+                  decoration: const InputDecoration(
+                    labelText: 'Select Doctor',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _doctors.map((doctor) {
+                    return DropdownMenuItem(
+                      value: doctor['id'],
+                      child: Text(doctor['name']!),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedDoctorId = value;
+                      _selectedDoctorName = _doctors.firstWhere(
+                        (d) => d['id'] == value,
+                      )['name'];
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select a doctor';
                     }
                     return null;
                   },
@@ -665,21 +774,51 @@ class _CreateChatDialogState extends State<_CreateChatDialog> {
 
         String patientId = widget.userId;
         String patientName = 'Unknown User';
+        String? staffId;
+        String? staffName;
 
         if (isStaff && _selectedPatientId != null) {
           // Staff is creating chat with selected patient
           patientId = _selectedPatientId!;
           patientName = _selectedPatientName ?? 'Unknown Patient';
+          staffId = widget.userId;
+          staffName =
+              '${(authState as AuthAuthenticated).user.firstName} ${(authState as AuthAuthenticated).user.lastName}';
         } else if (authState is AuthAuthenticated) {
-          // Patient is creating chat
+          // Patient is creating chat - assign to selected doctor
           patientName =
               '${authState.user.firstName} ${authState.user.lastName}';
+
+          if (_selectedDoctorId != null && _selectedDoctorName != null) {
+            staffId = _selectedDoctorId;
+            staffName = _selectedDoctorName;
+          } else {
+            // Fallback to first available staff member if no doctor selected
+            try {
+              final staffResponse = await SupabaseService.instance
+                  .from('users')
+                  .select('id, first_name, last_name')
+                  .eq('role', 'staff')
+                  .limit(1)
+                  .maybeSingle();
+
+              if (staffResponse != null) {
+                staffId = staffResponse['id'] as String;
+                staffName =
+                    '${staffResponse['first_name']} ${staffResponse['last_name']}';
+              }
+            } catch (e) {
+              print('⚠️ Could not assign staff member: $e');
+            }
+          }
         }
 
         final chat = Chat(
           id: '', // Will be generated by Supabase
           patientId: patientId,
           patientName: patientName,
+          staffId: staffId,
+          staffName: staffName,
           chatType: _selectedChatType,
           subject: _subjectController.text,
           description: _descriptionController.text.isNotEmpty

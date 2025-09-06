@@ -16,15 +16,57 @@ class SupabaseChatRepository implements ChatRepository {
   @override
   Future<Either<Failure, List<Chat>>> getChats(String userId) async {
     try {
+      print('🔍 Fetching chats for user: $userId');
+      // Fetch chats with patient and staff names by joining with users table
       final data = await _supabase
           .from('chats')
-          .select()
+          .select('''
+            *,
+            patient:patient_id(first_name, last_name),
+            staff:staff_id(first_name, last_name)
+          ''')
           .or('patient_id.eq.$userId,staff_id.eq.$userId')
           .order('created_at', ascending: false);
 
-      final chats = (data as List)
-          .map((e) => Chat.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
+      print('🔍 Raw chat data: ${data.length} chats found');
+
+      final chats = (data as List).map((e) {
+        final chatData = Map<String, dynamic>.from(e);
+
+        // Extract patient name
+        String patientName = 'Unknown Patient';
+        if (chatData['patient'] != null) {
+          final patient = chatData['patient'] as Map<String, dynamic>;
+          patientName =
+              '${patient['first_name'] ?? ''} ${patient['last_name'] ?? ''}'
+                  .trim();
+        }
+
+        // Extract staff name
+        String? staffName;
+        if (chatData['staff'] != null) {
+          final staff = chatData['staff'] as Map<String, dynamic>;
+          staffName = '${staff['first_name'] ?? ''} ${staff['last_name'] ?? ''}'
+              .trim();
+          if (staffName.isEmpty) staffName = null;
+        }
+
+        // Debug logging
+        print(
+          '🔍 Chat ${chatData['id']}: patient_name="$patientName", staff_name="$staffName"',
+        );
+
+        // Add the names to the chat data
+        chatData['patient_name'] = patientName;
+        chatData['staff_name'] = staffName;
+
+        // Remove the joined data to avoid conflicts
+        chatData.remove('patient');
+        chatData.remove('staff');
+
+        return Chat.fromJson(chatData);
+      }).toList();
+
       return Right(chats);
     } catch (e) {
       return Left(ServerFailure('Failed to fetch chats: $e'));
@@ -39,6 +81,8 @@ class SupabaseChatRepository implements ChatRepository {
           .insert({
             'patient_id': chat.patientId,
             'patient_name': chat.patientName,
+            'staff_id': chat.staffId,
+            'staff_name': chat.staffName,
             'chat_type': chat.chatType,
             'subject': chat.subject,
             'description': chat.description,
@@ -60,6 +104,7 @@ class SupabaseChatRepository implements ChatRepository {
           .from('chats')
           .update({
             'patient_name': chat.patientName,
+            'staff_name': chat.staffName,
             'chat_type': chat.chatType,
             'subject': chat.subject,
             'description': chat.description,
@@ -95,18 +140,47 @@ class SupabaseChatRepository implements ChatRepository {
     String chatId,
   ) async {
     try {
+      print('🔍 Fetching messages for chat: $chatId');
+      // Fetch messages with sender names by joining with users table
       final data = await _supabase
           .from('chat_messages')
-          .select()
+          .select('''
+            *,
+            sender:sender_id(first_name, last_name)
+          ''')
           .eq('chat_id', chatId)
           .order(
             'created_at',
             ascending: true,
           ); // oldest first (bottom display)
 
-      final messages = (data as List)
-          .map((e) => ChatMessage.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
+      print('🔍 Raw message data: ${data.length} messages found');
+
+      final messages = (data as List).map((e) {
+        final messageData = Map<String, dynamic>.from(e);
+
+        // Extract sender name
+        String senderName = 'Unknown User';
+        if (messageData['sender'] != null) {
+          final sender = messageData['sender'] as Map<String, dynamic>;
+          senderName =
+              '${sender['first_name'] ?? ''} ${sender['last_name'] ?? ''}'
+                  .trim();
+          if (senderName.isEmpty) senderName = 'Unknown User';
+        }
+
+        // Debug logging
+        print('🔍 Message ${messageData['id']}: sender_name="$senderName"');
+
+        // Add the sender name to the message data
+        messageData['sender_name'] = senderName;
+
+        // Remove the joined data to avoid conflicts
+        messageData.remove('sender');
+
+        return ChatMessage.fromJson(messageData);
+      }).toList();
+
       return Right(messages);
     } catch (e) {
       return Left(ServerFailure('Failed to fetch messages: $e'));
@@ -121,6 +195,7 @@ class SupabaseChatRepository implements ChatRepository {
           .insert({
             'chat_id': message.chatId,
             'sender_id': message.senderId,
+            'sender_name': message.senderName,
             'message_type': message.messageType,
             'content': message.content,
             'is_read': message.isRead,
@@ -181,9 +256,13 @@ class SupabaseChatRepository implements ChatRepository {
         .eq('chat_id', chatId)
         .order('created_at', ascending: true) // oldest first (bottom display)
         .map(
-          (rows) => rows
-              .map((e) => ChatMessage.fromJson(Map<String, dynamic>.from(e)))
-              .toList(),
+          (rows) => rows.map((e) {
+            final messageData = Map<String, dynamic>.from(e);
+
+            // For real-time updates, we need to fetch sender names separately
+            // since streams don't support joins easily
+            return ChatMessage.fromJson(messageData);
+          }).toList(),
         );
   }
 
@@ -238,16 +317,55 @@ class SupabaseChatRepository implements ChatRepository {
     String query,
   ) async {
     try {
+      // Fetch chats with patient and staff names by joining with users table
       final data = await _supabase
           .from('chats')
-          .select()
+          .select('''
+            *,
+            patient:patient_id(first_name, last_name),
+            staff:staff_id(first_name, last_name)
+          ''')
           .or('patient_id.eq.$userId,staff_id.eq.$userId')
           .or('subject.ilike.%$query%,patient_name.ilike.%$query%')
           .order('created_at', ascending: false);
 
-      final chats = (data as List)
-          .map((e) => Chat.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
+      final chats = (data as List).map((e) {
+        final chatData = Map<String, dynamic>.from(e);
+
+        // Extract patient name
+        String patientName = 'Unknown Patient';
+        if (chatData['patient'] != null) {
+          final patient = chatData['patient'] as Map<String, dynamic>;
+          patientName =
+              '${patient['first_name'] ?? ''} ${patient['last_name'] ?? ''}'
+                  .trim();
+        }
+
+        // Extract staff name
+        String? staffName;
+        if (chatData['staff'] != null) {
+          final staff = chatData['staff'] as Map<String, dynamic>;
+          staffName = '${staff['first_name'] ?? ''} ${staff['last_name'] ?? ''}'
+              .trim();
+          if (staffName.isEmpty) staffName = null;
+        }
+
+        // Debug logging
+        print(
+          '🔍 Chat ${chatData['id']}: patient_name="$patientName", staff_name="$staffName"',
+        );
+
+        // Add the names to the chat data
+        chatData['patient_name'] = patientName;
+        chatData['staff_name'] = staffName;
+
+        // Remove the joined data to avoid conflicts
+        chatData.remove('patient');
+        chatData.remove('staff');
+
+        return Chat.fromJson(chatData);
+      }).toList();
+
       return Right(chats);
     } catch (e) {
       return Left(ServerFailure('Failed to search chats: $e'));
