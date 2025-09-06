@@ -11,6 +11,7 @@ import 'package:u_clinic/presentation/pages/consultation/consultation_room_scree
 import 'package:u_clinic/presentation/pages/education/health_education_screen.dart';
 import 'package:u_clinic/presentation/screens/onboarding/onboarding_screen.dart';
 import 'package:u_clinic/presentation/pages/notifications/notifications_screen.dart';
+import 'package:u_clinic/presentation/pages/chat/chat_list_screen.dart';
 import 'package:u_clinic/presentation/pages/profile/settings_screen.dart'
     as patient_settings;
 import 'package:u_clinic/presentation/screens/settings/change_password_screen.dart';
@@ -56,6 +57,7 @@ class AppRouter {
   // New route constants for navigation
   static const String eConsultation = '/e-consultation';
   static const String profile = '/profile';
+  static const String chatList = '/chat';
 
   // Staff routes
   static const String staffDashboard = '/staff/dashboard';
@@ -182,6 +184,8 @@ class AppRouter {
         return FadePageRoute(child: const HealthEducationScreen());
       case notifications:
         return FadePageRoute(child: const NotificationsScreen());
+      case chatList:
+        return FadePageRoute(child: const ChatListScreen());
       case staffDashboard:
         if (currentRole == 'patient') {
           return FadePageRoute(child: const PatientDashboardScreen());

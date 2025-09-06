@@ -49,7 +49,10 @@ class _ChatScreenState extends State<ChatScreen> {
         title: _buildAppBarTitle(),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            // Return true to indicate refresh is needed
+            Navigator.of(context).pop(true);
+          },
         ),
         actions: [
           IconButton(icon: const Icon(Icons.attach_file), onPressed: _pickFile),

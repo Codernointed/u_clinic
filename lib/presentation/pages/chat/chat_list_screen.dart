@@ -451,11 +451,17 @@ class _ChatListScreenState extends State<ChatListScreen>
     );
   }
 
-  void _openChat(Chat chat) {
-    Navigator.push(
+  void _openChat(Chat chat) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => ChatScreen(chat: chat)),
     );
+    
+    // Refresh chats when returning from chat screen
+    if (result == true && _currentUserId.isNotEmpty) {
+      print('🔄 Refreshing chats after returning from chat screen');
+      context.read<ChatBloc>().add(LoadChats(_currentUserId));
+    }
   }
 
   Color _getStatusColor(String status) {

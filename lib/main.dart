@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:u_clinic/core/routes/app_router.dart';
 import 'package:u_clinic/core/services/supabase_service.dart';
+import 'package:u_clinic/core/services/notification_service.dart';
 import 'package:u_clinic/core/theme/app_theme.dart';
 import 'package:u_clinic/data/repositories/supabase_auth_repository.dart';
 import 'package:u_clinic/data/repositories/supabase_chat_repository.dart';
@@ -19,6 +20,9 @@ void main() async {
 
   // Initialize Supabase
   await SupabaseService.instance.initialize();
+  
+  // Initialize Notification Service
+  await notificationService.initialize();
 
   runApp(const UClinicApp());
 }

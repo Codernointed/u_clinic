@@ -4,12 +4,14 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../domain/repositories/appointment_repository.dart';
 import '../../../data/repositories/supabase_appointment_repository.dart';
 import '../../../domain/enums/appointment_status.dart';
 import '../../../presentation/providers/auth/auth_bloc.dart';
 import '../../../presentation/providers/auth/auth_state.dart';
 import '../chat/chat_list_screen.dart';
+import '../notifications/notifications_screen.dart';
 
 class StaffDashboardScreen extends StatefulWidget {
   const StaffDashboardScreen({super.key});
@@ -23,12 +25,30 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   late final AppointmentRepository _appointmentRepository;
   List<dynamic> _todayAppointments = [];
   bool _isLoading = true;
+  int _unreadNotifications = 0;
 
   @override
   void initState() {
     super.initState();
     _appointmentRepository = context.read<SupabaseAppointmentRepository>();
     _loadTodayAppointments();
+    _initializeNotifications();
+  }
+
+  void _initializeNotifications() async {
+    await notificationService.initialize();
+    setState(() {
+      _unreadNotifications = notificationService.unreadCount;
+    });
+    
+    // Listen to notification updates
+    notificationService.notificationsStream.listen((notifications) {
+      if (mounted) {
+        setState(() {
+          _unreadNotifications = notifications.where((n) => !n.isRead).length;
+        });
+      }
+    });
   }
 
   Future<void> _loadTodayAppointments() async {
@@ -102,10 +122,45 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () =>
-                Navigator.pushNamed(context, AppRouter.notifications),
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationsScreen(),
+                    ),
+                  );
+                },
+              ),
+              if (_unreadNotifications > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: AppColors.emergency,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '$_unreadNotifications',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
           IconButton(
             icon: const Icon(Icons.home_outlined, color: Colors.white),

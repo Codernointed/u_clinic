@@ -11,6 +11,7 @@ import '../records/medical_records_screen.dart';
 import '../chat/chat_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../profile/profile_screen.dart';
+import '../ai_doctor/ai_doctor_chat_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -214,6 +215,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildUpcomingAppointments(),
               const SizedBox(height: AppDimensions.spacingXL),
               _buildHealthServicesSection(),
+              const SizedBox(height: AppDimensions.spacingXL),
+              _buildChatWithAIDoctor(),
               const SizedBox(height: AppDimensions.spacingXL),
               _buildEmergencySection(),
               const SizedBox(height: 100), // Bottom padding
@@ -772,6 +775,139 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+  //card to chat with AI doctor
+  Widget _buildChatWithAIDoctor() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppDimensions.spacingL),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.cardConsultation, AppColors.primaryLight],
+        ),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppDimensions.spacingM),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                ),
+                child: const Icon(
+                  Icons.smart_toy,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.spacingM),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Chat with Dr. AI',
+                      style: AppTypography.heading4.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Your AI Health Assistant',
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.spacingM),
+          Text(
+            'Get instant answers to your health questions, wellness tips, and general medical guidance from our friendly AI doctor.',
+            style: AppTypography.bodyMedium.copyWith(
+              color: Colors.white.withOpacity(0.9),
+            ),
+          ),
+          const SizedBox(height: AppDimensions.spacingL),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AIDoctorChatScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.chat, color: Colors.white),
+                  label: const Text(
+                    'Start Chat',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white.withOpacity(0.2),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppDimensions.spacingM,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppDimensions.spacingM),
+              Container(
+                padding: const EdgeInsets.all(AppDimensions.spacingM),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.flash_on,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '24/7',
+                      style: AppTypography.caption.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
 
   Widget _buildEmergencySection() {
     return Container(
@@ -812,7 +948,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Text(
-                  'UMaT Clinic: +233-123-456-789',
+                  'UMaT Clinic: +233-595-920-831',
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -825,7 +961,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 36,
             child: ElevatedButton(
               onPressed: () async {
-                final uri = Uri(scheme: 'tel', path: '+233123456789');
+                final uri = Uri(scheme: 'tel', path: '+233595920831');
                 if (await canLaunchUrl(uri)) {
                   await launchUrl(uri);
                 } else {
@@ -865,7 +1001,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         content: Text(
-          'Are you sure you want to call the UMaT clinic emergency line?\n\n📞 +233-123-456-789',
+          'Are you sure you want to call the UMaT clinic emergency line?\n\n📞 +233-595-920-831',
           style: AppTypography.bodyMedium.copyWith(
             color: AppColors.textSecondary,
           ),
@@ -905,4 +1041,5 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
 }

@@ -4,12 +4,14 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/services/notification_service.dart';
 import '../../providers/auth/auth_bloc.dart';
 import '../../providers/auth/auth_state.dart';
 import '../../widgets/cards/healthcare_service_card.dart';
 import '../appointments/appointment_booking_screen.dart';
 import '../records/medical_records_screen.dart';
 import '../profile/profile_screen.dart';
+import '../notifications/notifications_screen.dart';
 import '../../../domain/enums/consultation_type.dart';
 
 class HealthcareHomeScreen extends StatefulWidget {
@@ -21,6 +23,7 @@ class HealthcareHomeScreen extends StatefulWidget {
 
 class _HealthcareHomeScreenState extends State<HealthcareHomeScreen> {
   int _selectedIndex = 0;
+  int _unreadNotifications = 0;
 
   final List<String> _navLabels = ['Home', 'Records', 'Chat', 'Profile'];
   final List<IconData> _navIcons = [
@@ -35,6 +38,28 @@ class _HealthcareHomeScreenState extends State<HealthcareHomeScreen> {
     Icons.chat,
     Icons.person,
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+  }
+
+  void _initializeNotifications() async {
+    await notificationService.initialize();
+    setState(() {
+      _unreadNotifications = notificationService.unreadCount;
+    });
+    
+    // Listen to notification updates
+    notificationService.notificationsStream.listen((notifications) {
+      if (mounted) {
+        setState(() {
+          _unreadNotifications = notifications.where((n) => !n.isRead).length;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,12 +130,48 @@ class _HealthcareHomeScreenState extends State<HealthcareHomeScreen> {
                       ),
                       Row(
                         children: [
-                          IconButton(
-                            onPressed: () {},
-                            icon: const Icon(
-                              Icons.notifications_outlined,
-                              color: Colors.white,
-                            ),
+                          Stack(
+                            children: [
+                              IconButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const NotificationsScreen(),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.notifications_outlined,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              if (_unreadNotifications > 0)
+                                Positioned(
+                                  right: 8,
+                                  top: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.emergency,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 16,
+                                      minHeight: 16,
+                                    ),
+                                    child: Text(
+                                      '$_unreadNotifications',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           IconButton(
                             onPressed: () {},
@@ -581,7 +642,7 @@ class _HealthcareHomeScreenState extends State<HealthcareHomeScreen> {
       AppRouter.eConsultation,
       arguments: {
         'appointmentId': 'demo-123',
-        'doctorName': 'Dr. Sarah Johnson',
+        'doctorName': 'Dr. Emily Davidson',
         'department': 'General Practice',
         'consultationType': type,
       },
