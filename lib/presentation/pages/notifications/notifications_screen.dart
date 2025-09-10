@@ -29,7 +29,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   void _initializeNotifications() async {
     await notificationService.initialize();
-    
+
     _notificationsSubscription = notificationService.notificationsStream.listen(
       (notifications) {
         if (mounted) {
@@ -70,8 +70,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _notifications.isEmpty
-              ? _buildEmptyState()
-              : _buildNotificationsList(),
+          ? _buildEmptyState()
+          : _buildNotificationsList(),
     );
   }
 
@@ -132,8 +132,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         title: Text(
           notification.title,
           style: AppTypography.bodyLarge.copyWith(
-            fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
-            color: notification.isRead ? AppColors.textSecondary : AppColors.textPrimary,
+            fontWeight: notification.isRead
+                ? FontWeight.normal
+                : FontWeight.bold,
+            color: notification.isRead
+                ? AppColors.textSecondary
+                : AppColors.textPrimary,
           ),
         ),
         subtitle: Column(
@@ -305,7 +309,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Notification'),
-        content: const Text('Are you sure you want to delete this notification?'),
+        content: const Text(
+          'Are you sure you want to delete this notification?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -316,9 +322,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               Navigator.pop(context);
               notificationService.deleteNotification(notificationId);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Delete'),
           ),
         ],

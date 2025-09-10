@@ -40,7 +40,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     setState(() {
       _unreadNotifications = notificationService.unreadCount;
     });
-    
+
     // Listen to notification updates
     notificationService.notificationsStream.listen((notifications) {
       if (mounted) {
@@ -59,11 +59,11 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
       final state = context.read<AuthBloc>().state;
       if (state is AuthAuthenticated) {
-        // For staff, we'll show all appointments for today
-        // In a real app, you'd filter by the staff member's department or assigned patients
+        // Show all appointments for this doctor (excluding completed/cancelled)
+        // The repository method ignores the date parameter and shows all appointments
         final result = await _appointmentRepository.getDoctorAppointments(
           doctorId: state.user.id,
-          date: DateTime.now(),
+          date: DateTime.now(), // Required parameter, but ignored by repository
         );
 
         result.fold(
@@ -75,7 +75,9 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
             });
           },
           (appointments) {
-            print('✅ Loaded ${appointments.length} appointments for today');
+            print(
+              '✅ Loaded ${appointments.length} appointments for this doctor',
+            );
             setState(() {
               _todayAppointments = appointments;
               _isLoading = false;
@@ -110,7 +112,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         ),
         title: Text(
           _index == 0
-              ? 'Today\'s Schedule'
+              ? 'All Appointments'
               : _index == 1
               ? 'Patients'
               : _index == 2
@@ -125,7 +127,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           Stack(
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                icon: const Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.white,
+                ),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -251,7 +256,7 @@ class _StaffScheduleView extends StatelessWidget {
               children: [
                 Expanded(
                   child: _StatCard(
-                    title: 'Today\'s Patients',
+                    title: 'Total Patients',
                     value: appointments.length.toString(),
                     icon: Icons.people,
                     color: AppColors.cardConsultation,
@@ -294,14 +299,14 @@ class _StaffScheduleView extends StatelessWidget {
                         ),
                         const SizedBox(height: AppDimensions.spacingM),
                         Text(
-                          'No appointments today',
+                          'No appointments found',
                           style: AppTypography.heading4.copyWith(
                             color: AppColors.textTertiary,
                           ),
                         ),
                         const SizedBox(height: AppDimensions.spacingS),
                         Text(
-                          'You\'re all caught up!',
+                          'No patients have booked appointments yet',
                           style: AppTypography.bodyMedium.copyWith(
                             color: AppColors.textTertiary,
                           ),
@@ -315,7 +320,7 @@ class _StaffScheduleView extends StatelessWidget {
                     ),
                     children: [
                       Text(
-                        'Today\'s Appointments',
+                        'All Appointments',
                         style: AppTypography.heading4.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,

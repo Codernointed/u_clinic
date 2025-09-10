@@ -259,8 +259,21 @@ class SupabaseChatRepository implements ChatRepository {
           (rows) => rows.map((e) {
             final messageData = Map<String, dynamic>.from(e);
 
-            // For real-time updates, we need to fetch sender names separately
-            // since streams don't support joins easily
+            // Ensure required fields have sensible defaults to avoid null cast errors
+            messageData['sender_name'] =
+                (messageData['sender_name'] as String?)?.trim().isNotEmpty ==
+                    true
+                ? messageData['sender_name']
+                : 'Unknown User';
+            messageData['message_type'] =
+                (messageData['message_type'] as String?)?.trim().isNotEmpty ==
+                    true
+                ? messageData['message_type']
+                : 'text';
+            messageData['is_read'] = messageData['is_read'] is bool
+                ? messageData['is_read']
+                : false;
+
             return ChatMessage.fromJson(messageData);
           }).toList(),
         );
@@ -385,9 +398,21 @@ class SupabaseChatRepository implements ChatRepository {
           .ilike('content', '%$query%')
           .order('created_at');
 
-      final messages = (data as List)
-          .map((e) => ChatMessage.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
+      final messages = (data as List).map((e) {
+        final messageData = Map<String, dynamic>.from(e);
+        messageData['sender_name'] =
+            (messageData['sender_name'] as String?)?.trim().isNotEmpty == true
+            ? messageData['sender_name']
+            : 'Unknown User';
+        messageData['message_type'] =
+            (messageData['message_type'] as String?)?.trim().isNotEmpty == true
+            ? messageData['message_type']
+            : 'text';
+        messageData['is_read'] = messageData['is_read'] is bool
+            ? messageData['is_read']
+            : false;
+        return ChatMessage.fromJson(messageData);
+      }).toList();
       return Right(messages);
     } catch (e) {
       return Left(ServerFailure('Failed to search messages: $e'));

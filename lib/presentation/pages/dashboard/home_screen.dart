@@ -8,7 +8,6 @@ import '../../../core/routes/app_router.dart';
 import '../../providers/auth/auth_bloc.dart';
 import '../../providers/auth/auth_state.dart';
 import '../records/medical_records_screen.dart';
-import '../chat/chat_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../profile/profile_screen.dart';
 import '../ai_doctor/ai_doctor_chat_screen.dart';
@@ -775,6 +774,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+
   //card to chat with AI doctor
   Widget _buildChatWithAIDoctor() {
     return Container(
@@ -837,7 +837,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: AppDimensions.spacingM),
           Text(
-            'Get instant answers to your health questions, wellness tips, and general medical guidance from our friendly AI doctor.',
+            'Get instant answers to your health questions, wellness tips, and general medical guidance from our friendly AI doctor. Available 24/7 for UMaT students and staff.',
             style: AppTypography.bodyMedium.copyWith(
               color: Colors.white.withOpacity(0.9),
             ),
@@ -870,7 +870,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       vertical: AppDimensions.spacingM,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusM,
+                      ),
                     ),
                     elevation: 0,
                   ),
@@ -885,17 +887,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Column(
                   children: [
-                    const Icon(
-                      Icons.flash_on,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                    const Icon(Icons.flash_on, color: Colors.white, size: 20),
                     const SizedBox(height: 4),
                     Text(
                       '24/7',
                       style: AppTypography.caption.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'Online',
+                      style: AppTypography.caption.copyWith(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 10,
                       ),
                     ),
                   ],
@@ -907,7 +912,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  
 
   Widget _buildEmergencySection() {
     return Container(
@@ -1041,5 +1045,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 }

@@ -50,7 +50,7 @@ class _HealthcareHomeScreenState extends State<HealthcareHomeScreen> {
     setState(() {
       _unreadNotifications = notificationService.unreadCount;
     });
-    
+
     // Listen to notification updates
     notificationService.notificationsStream.listen((notifications) {
       if (mounted) {
@@ -137,7 +137,8 @@ class _HealthcareHomeScreenState extends State<HealthcareHomeScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const NotificationsScreen(),
+                                      builder: (context) =>
+                                          const NotificationsScreen(),
                                     ),
                                   );
                                 },

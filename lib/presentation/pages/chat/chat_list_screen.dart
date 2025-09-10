@@ -456,7 +456,7 @@ class _ChatListScreenState extends State<ChatListScreen>
       context,
       MaterialPageRoute(builder: (context) => ChatScreen(chat: chat)),
     );
-    
+
     // Refresh chats when returning from chat screen
     if (result == true && _currentUserId.isNotEmpty) {
       print('🔄 Refreshing chats after returning from chat screen');

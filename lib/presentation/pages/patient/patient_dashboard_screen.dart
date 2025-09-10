@@ -4,15 +4,12 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/routes/app_router.dart';
-import '../../../core/services/video_call_service.dart';
 import '../../../core/services/notification_service.dart';
-import '../../../domain/entities/user.dart';
 import '../../../domain/repositories/appointment_repository.dart';
 import '../../../data/repositories/supabase_appointment_repository.dart';
 import '../../../domain/enums/appointment_status.dart';
 import '../../../presentation/providers/auth/auth_bloc.dart';
 import '../../../presentation/providers/auth/auth_state.dart';
-import '../../../presentation/widgets/cards/appointment_summary_card.dart';
 import '../../../presentation/widgets/cards/healthcare_service_card.dart';
 import '../../../presentation/widgets/cards/health_tip_card.dart';
 import '../notifications/notifications_screen.dart';
@@ -43,7 +40,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
     setState(() {
       _unreadNotifications = notificationService.unreadCount;
     });
-    
+
     // Listen to notification updates
     notificationService.notificationsStream.listen((notifications) {
       if (mounted) {
@@ -177,7 +174,10 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
         Stack(
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+              icon: const Icon(
+                Icons.notifications_outlined,
+                color: Colors.white,
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -432,9 +432,11 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
   }
 
   Widget _buildAppointmentCard(dynamic appointment) {
-    final isToday = _formatAppointmentDate(appointment.appointmentDate) == 'Today';
+    final isToday =
+        _formatAppointmentDate(appointment.appointmentDate) == 'Today';
     final isCurrentTime = _isAppointmentTimeNow(appointment);
-    
+    final bool isJoinable = appointment.status == AppointmentStatus.scheduled;
+
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spacingM),
       decoration: BoxDecoration(
@@ -525,7 +527,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
                 ),
             ],
           ),
-          if (isToday && isCurrentTime) ...[
+          if (isJoinable) ...[
             const SizedBox(height: AppDimensions.spacingM),
             const Divider(),
             const SizedBox(height: AppDimensions.spacingS),
@@ -571,16 +573,16 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
   bool _isAppointmentTimeNow(dynamic appointment) {
     final now = DateTime.now();
     final appointmentTime = appointment.appointmentTime;
-    
+
     if (appointmentTime == null) return false;
-    
+
     // Parse appointment time (assuming format like "14:30:00")
     final timeParts = appointmentTime.split(':');
     if (timeParts.length < 2) return false;
-    
+
     final appointmentHour = int.tryParse(timeParts[0]) ?? 0;
     final appointmentMinute = int.tryParse(timeParts[1]) ?? 0;
-    
+
     // Check if current time is within 30 minutes before or after appointment time
     final appointmentDateTime = DateTime(
       now.year,
@@ -589,14 +591,14 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
       appointmentHour,
       appointmentMinute,
     );
-    
+
     final difference = now.difference(appointmentDateTime).abs();
     return difference.inMinutes <= 30;
   }
 
   void _joinVideoCall(dynamic appointment) {
     final channelName = 'consultation_${appointment.id}';
-    
+
     Navigator.pushNamed(
       context,
       AppRouter.consultationRoom,
@@ -609,17 +611,14 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen> {
         'isPatient': true,
       },
     );
-    
+
     print('🎥 Patient joining video call channel: $channelName');
   }
 
   void _joinChat(dynamic appointment) {
     // Navigate to chat screen for this appointment
-    Navigator.pushNamed(
-      context,
-      AppRouter.eConsultation,
-    );
-    
+    Navigator.pushNamed(context, AppRouter.eConsultation);
+
     print('💬 Patient joining chat for appointment: ${appointment.id}');
   }
 
