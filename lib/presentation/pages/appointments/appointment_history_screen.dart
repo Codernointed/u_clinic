@@ -176,6 +176,7 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
   Widget _buildAppointmentCard(Appointment appointment) {
     final isUpcoming = appointment.isUpcoming;
     final isToday = appointment.isToday;
+    final isLiveWindow = _isAppointmentTimeNow(appointment);
 
     return Container(
       padding: const EdgeInsets.all(AppDimensions.spacingM),
@@ -210,7 +211,10 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  spacing: AppDimensions.spacingS,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
                       isUpcoming ? 'Upcoming' : 'Completed',
@@ -221,20 +225,15 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: AppDimensions.spacingS),
                     Text(
                       '• ${appointment.departmentName ?? 'General'}',
                       style: AppTypography.bodySmall.copyWith(
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    if (isToday) ...[
-                      const SizedBox(width: AppDimensions.spacingS),
+                    if (isToday)
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: AppColors.primary,
                           borderRadius: BorderRadius.circular(12),
@@ -248,7 +247,22 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
                           ),
                         ),
                       ),
-                    ],
+                    if (isLiveWindow)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'LIVE',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -279,6 +293,7 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
             ),
           ),
           Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               TextButton(
                 onPressed: () {
@@ -292,9 +307,27 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
               ),
               if (isUpcoming) ...[
                 const SizedBox(height: 4),
+                ElevatedButton.icon(
+                  onPressed: () => _joinVideoCall(appointment),
+                  icon: const Icon(Icons.videocam, size: 18, color: Colors.white),
+                  label: const Text('Join'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(0, 32),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    shape: const StadiumBorder(),
+                    textStyle: AppTypography.bodySmall,
+                  ),
+                ),
+                const SizedBox(height: 4),
                 TextButton(
                   onPressed: () => _cancelAppointment(appointment),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    minimumSize: const Size(0, 32),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
                   child: const Text('Cancel'),
                 ),
               ],
@@ -303,6 +336,48 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
         ],
       ),
     );
+  }
+
+  bool _isAppointmentTimeNow(Appointment appointment) {
+    // Within ±30 minutes of scheduled time on the same day
+    final now = DateTime.now();
+    final isSameDay = appointment.appointmentDate.year == now.year &&
+        appointment.appointmentDate.month == now.month &&
+        appointment.appointmentDate.day == now.day;
+    if (!isSameDay) return false;
+
+    final timeParts = appointment.appointmentTime.split(':');
+    if (timeParts.length < 2) return false;
+
+    final appointmentHour = int.tryParse(timeParts[0]) ?? 0;
+    final appointmentMinute = int.tryParse(timeParts[1]) ?? 0;
+    final appointmentDateTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      appointmentHour,
+      appointmentMinute,
+    );
+    final diff = now.difference(appointmentDateTime).abs();
+    return diff.inMinutes <= 30;
+  }
+
+  void _joinVideoCall(Appointment appointment) {
+    final channelName = 'consultation_${appointment.id}';
+    Navigator.pushNamed(
+      context,
+      AppRouter.consultationRoom,
+      arguments: {
+        'appointment': appointment,
+        'patientName': 'You',
+        'appointmentTime': appointment.appointmentTime,
+        'reason': appointment.reasonForVisit,
+        'symptoms': appointment.symptoms,
+        'isPatient': true,
+      },
+    );
+    // ignore: avoid_print
+    print('🎥 Patient joining video call channel: $channelName');
   }
 
   Future<void> _cancelAppointment(Appointment appointment) async {

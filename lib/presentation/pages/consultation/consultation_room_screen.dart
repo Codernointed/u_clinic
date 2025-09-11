@@ -48,6 +48,7 @@ class _ConsultationRoomScreenState extends State<ConsultationRoomScreen>
   late String? _symptoms;
   late dynamic _appointment;
   late String _channelName;
+  bool _isPatientRole = true;
 
   @override
   void initState() {
@@ -67,6 +68,7 @@ class _ConsultationRoomScreenState extends State<ConsultationRoomScreen>
       _appointmentTime = args['appointmentTime'] ?? 'Unknown';
       _reason = args['reason'];
       _symptoms = args['symptoms'];
+      _isPatientRole = args['isPatient'] == true;
       _channelName =
           'consultation_${_appointment?.id ?? DateTime.now().millisecondsSinceEpoch}';
     } else {
@@ -74,6 +76,10 @@ class _ConsultationRoomScreenState extends State<ConsultationRoomScreen>
       _appointmentTime = 'Unknown';
       _channelName = 'consultation_${DateTime.now().millisecondsSinceEpoch}';
     }
+
+    // Debug prints for arguments
+    // ignore: avoid_print
+    print('🧭 Consultation args: channel=$_channelName isPatient=$_isPatientRole appointmentId=${_appointment?.id}');
   }
 
   Future<void> _initializeVideoCall() async {
@@ -89,6 +95,8 @@ class _ConsultationRoomScreenState extends State<ConsultationRoomScreen>
         setState(() {
           _isConnecting = false;
         });
+        // ignore: avoid_print
+        print('🔔 isJoinedStream => $isJoined');
       });
 
       _remoteUidSubscription = _videoService.remoteUidStream.listen((
@@ -97,12 +105,31 @@ class _ConsultationRoomScreenState extends State<ConsultationRoomScreen>
         setState(() {
           _isPatientJoined = remoteUid != null;
         });
+        // ignore: avoid_print
+        print('🔔 remoteUidStream => $remoteUid');
       });
 
       // Join the channel
-      await _videoService.joinChannel(_channelName);
+      final forcedUid = _isPatientRole ? 2 : 1; // deterministic uids
+      // ignore: avoid_print
+      print('🚪 Joining channel $_channelName with uid=$forcedUid (isPatient=$_isPatientRole)');
+      await _videoService.joinChannel(_channelName, uid: forcedUid);
 
       print('✅ Video call initialized for channel: $_channelName');
+
+      // Fallback: if callbacks never arrive, stop showing infinite loader
+      Future.delayed(const Duration(seconds: 12), () {
+        if (mounted && _isConnecting) {
+          setState(() {
+            _isConnecting = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Still connecting... Showing interface while waiting for remote user.'),
+            ),
+          );
+        }
+      });
     } catch (e) {
       print('❌ Failed to initialize video call: $e');
       setState(() {
@@ -345,6 +372,10 @@ class _ConsultationRoomScreenState extends State<ConsultationRoomScreen>
                   style: AppTypography.bodySmall.copyWith(
                     color: Colors.white70,
                   ),
+                ),
+                Text(
+                  'Channel: $_channelName • Role: ${_isPatientRole ? 'Patient(uid=2)' : 'Doctor(uid=1)'}',
+                  style: AppTypography.caption.copyWith(color: Colors.white38),
                 ),
               ],
             ),

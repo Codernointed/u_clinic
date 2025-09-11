@@ -6,7 +6,6 @@ import 'package:u_clinic/core/theme/app_dimensions.dart';
 import 'package:u_clinic/core/theme/app_typography.dart';
 import 'package:u_clinic/presentation/screens/inspirations_screen.dart';
 import 'package:u_clinic/presentation/screens/library_screen.dart';
-import 'package:u_clinic/presentation/screens/news_screen.dart';
 import 'package:u_clinic/presentation/screens/settings_screen.dart';
 import 'package:u_clinic/presentation/widgets/emergency_section.dart';
 import 'package:u_clinic/presentation/widgets/find_a_doctor.dart';
@@ -18,11 +17,9 @@ import 'package:u_clinic/presentation/widgets/info_card.dart';
 import 'package:u_clinic/presentation/widgets/exposing_myths_card.dart';
 import 'package:u_clinic/presentation/models/grid_item.dart';
 import 'package:u_clinic/presentation/screens/see_all_screen.dart';
-import 'package:u_clinic/presentation/widgets/map_a_gym.dart';
 import 'package:u_clinic/presentation/widgets/section_header.dart';
 import 'package:u_clinic/core/routes/app_router.dart';
 import 'package:u_clinic/presentation/helpers/fade_page_route.dart';
-import 'package:u_clinic/presentation/widgets/talk_to_an_expert_card.dart';
 
 // Mock data models
 class NewsAlert {

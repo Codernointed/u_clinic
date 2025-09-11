@@ -11,6 +11,9 @@ import '../records/medical_records_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../profile/profile_screen.dart';
 import '../ai_doctor/ai_doctor_chat_screen.dart';
+import '../../../domain/enums/appointment_status.dart';
+import '../../../domain/repositories/appointment_repository.dart';
+import '../../../data/repositories/supabase_appointment_repository.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +24,60 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  // Appointments state (patient side)
+  late final AppointmentRepository _appointmentRepository;
+  List<dynamic> _upcomingAppointments = [];
+  bool _isLoadingAppointments = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize repository from DI
+    _appointmentRepository = context.read<SupabaseAppointmentRepository>();
+    // Preload appointments for the patient home tab
+    _loadUpcomingAppointments();
+  }
+
+  Future<void> _loadUpcomingAppointments() async {
+    try {
+      setState(() {
+        _isLoadingAppointments = true;
+      });
+
+      final state = context.read<AuthBloc>().state;
+      if (state is AuthAuthenticated) {
+        final result = await _appointmentRepository.getPatientAppointments(
+          patientId: state.user.id,
+          status: AppointmentStatus.scheduled,
+        );
+
+        result.fold(
+          (_) {
+            setState(() {
+              _upcomingAppointments = [];
+              _isLoadingAppointments = false;
+            });
+          },
+          (appointments) {
+            setState(() {
+              _upcomingAppointments = appointments;
+              _isLoadingAppointments = false;
+            });
+          },
+        );
+      } else {
+        setState(() {
+          _upcomingAppointments = [];
+          _isLoadingAppointments = false;
+        });
+      }
+    } catch (_) {
+      setState(() {
+        _upcomingAppointments = [];
+        _isLoadingAppointments = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -521,108 +578,262 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: AppDimensions.spacingM),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppDimensions.spacingM),
-            decoration: BoxDecoration(
-              color: AppColors.cardAppointment,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.1),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-                  child: SizedBox(
-                    width: 60,
-                    height: 60,
-                    child: Image.network(
-                      'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: AppColors.primary.withOpacity(0.1),
-                        child: const Icon(
-                          Icons.person,
-                          color: AppColors.primary,
-                          size: 30,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppDimensions.spacingM),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          if (_isLoadingAppointments)
+            const Center(child: CircularProgressIndicator())
+          else if (_upcomingAppointments.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppDimensions.spacingM),
+              decoration: BoxDecoration(
+                color: AppColors.cardAppointment,
+                borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
+                      const Icon(Icons.event_busy, color: AppColors.primary),
+                      const SizedBox(width: 8),
                       Text(
-                        'Dr. Sarah Johnson',
+                        'No upcoming appointments',
                         style: AppTypography.bodyLarge.copyWith(
-                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'General Practice',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 14,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Tomorrow, 10:00 AM',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
-                ),
-                InkWell(
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    AppRouter.appointmentDetails,
-                    arguments: {'id': 0},
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusS,
-                      ),
+                  const SizedBox(height: AppDimensions.spacingS),
+                  Text(
+                    'Book your first appointment to get started',
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.textSecondary,
                     ),
-                    child: const Icon(
-                      Icons.arrow_forward_ios,
-                      color: AppColors.primary,
-                      size: 16,
+                  ),
+                  const SizedBox(height: AppDimensions.spacingM),
+                  ElevatedButton(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, AppRouter.appointmentBooking),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Book Appointment'),
+                  ),
+                ],
+              ),
+            )
+          else
+            Column(
+              children: _upcomingAppointments
+                  .take(3)
+                  .map((appointment) => Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: AppDimensions.spacingS,
+                        ),
+                        child: _buildAppointmentCard(appointment),
+                      ))
+                  .toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _formatAppointmentDate(DateTime date) {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final appointmentDate = DateTime(date.year, date.month, date.day);
+
+    if (appointmentDate.isAtSameMomentAs(
+      DateTime(now.year, now.month, now.day),
+    )) {
+      return 'Today';
+    } else if (appointmentDate.isAtSameMomentAs(tomorrow)) {
+      return 'Tomorrow';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
+  }
+
+  bool _isAppointmentTimeNow(dynamic appointment) {
+    final now = DateTime.now();
+    final appointmentTime = appointment.appointmentTime;
+    if (appointmentTime == null) return false;
+    final timeParts = appointmentTime.split(':');
+    if (timeParts.length < 2) return false;
+    final appointmentHour = int.tryParse(timeParts[0]) ?? 0;
+    final appointmentMinute = int.tryParse(timeParts[1]) ?? 0;
+    final appointmentDateTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      appointmentHour,
+      appointmentMinute,
+    );
+    final difference = now.difference(appointmentDateTime).abs();
+    return difference.inMinutes <= 30;
+  }
+
+  Widget _buildAppointmentCard(dynamic appointment) {
+    final isToday = _formatAppointmentDate(appointment.appointmentDate) == 'Today';
+    final isCurrentTime = _isAppointmentTimeNow(appointment);
+    final bool isJoinable = appointment.status == AppointmentStatus.scheduled;
+
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.spacingM),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+        border: Border.all(color: AppColors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      appointment.doctorName ?? 'Doctor',
+                      style: AppTypography.bodyLarge.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: AppDimensions.spacingS),
+                    Wrap(
+                      spacing: AppDimensions.spacingS,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.calendar_today,
+                          size: 16,
+                          color: AppColors.textTertiary,
+                        ),
+                        Text(
+                          _formatAppointmentDate(appointment.appointmentDate),
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                        const SizedBox(width: AppDimensions.spacingS),
+                        const Icon(
+                          Icons.access_time,
+                          size: 16,
+                          color: AppColors.textTertiary,
+                        ),
+                        Text(
+                          appointment.appointmentTime,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (isToday && isCurrentTime)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.spacingS,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+                  ),
+                  child: Text(
+                    'LIVE',
+                    style: AppTypography.caption.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (isJoinable) ...[
+            const SizedBox(height: AppDimensions.spacingM),
+            const Divider(),
+            const SizedBox(height: AppDimensions.spacingS),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _joinVideoCall(appointment),
+                    icon: const Icon(Icons.videocam, size: 18, color: Colors.white),
+                    label: const Text('Join'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(0, 36),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: const StadiumBorder(),
+                      textStyle: AppTypography.bodySmall,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppDimensions.spacingS),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _joinChat(appointment),
+                    icon: const Icon(Icons.chat_bubble_outline, size: 18, color: AppColors.primary),
+                    label: const Text('Chat'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      minimumSize: const Size(0, 36),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: const StadiumBorder(),
+                      textStyle: AppTypography.bodySmall,
                     ),
                   ),
                 ),
               ],
             ),
-          ),
+          ],
         ],
       ),
     );
+  }
+
+  void _joinVideoCall(dynamic appointment) {
+    final channelName = 'consultation_${appointment.id}';
+    Navigator.pushNamed(
+      context,
+      AppRouter.consultationRoom,
+      arguments: {
+        'appointment': appointment,
+        'patientName': 'You',
+        'appointmentTime': appointment.appointmentTime,
+        'reason': appointment.reasonForVisit,
+        'symptoms': appointment.symptoms,
+        'isPatient': true,
+      },
+    );
+    // Logging for debug
+    // ignore: avoid_print
+    print('🎥 Patient joining video call channel: $channelName');
+  }
+
+  void _joinChat(dynamic appointment) {
+    Navigator.pushNamed(context, AppRouter.eConsultation);
   }
 
   Widget _buildHealthServicesSection() {

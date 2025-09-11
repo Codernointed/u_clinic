@@ -111,6 +111,9 @@ class _AIDoctorChatScreenState extends State<AIDoctorChatScreen> {
           // Chat Messages
           Expanded(
             child: ListView.builder(
+              key: ValueKey(
+                _messages.length,
+              ), // Force rebuild when messages change
               controller: _scrollController,
               padding: const EdgeInsets.all(AppDimensions.spacingM),
               itemCount: _messages.length,
@@ -226,6 +229,9 @@ class _AIDoctorChatScreenState extends State<AIDoctorChatScreen> {
 
   Widget _buildMessageBubble(ChatMessage message) {
     return Padding(
+      key: ValueKey(
+        '${message.timestamp.millisecondsSinceEpoch}_${message.isUser}',
+      ),
       padding: const EdgeInsets.only(bottom: AppDimensions.spacingM),
       child: Row(
         mainAxisAlignment: message.isUser
@@ -438,18 +444,27 @@ class _AIDoctorChatScreenState extends State<AIDoctorChatScreen> {
       return;
     }
 
+    // Add user message immediately
+    final userMessage = ChatMessage(
+      text: text,
+      isUser: true,
+      timestamp: DateTime.now(),
+    );
     setState(() {
-      _messages.add(
-        ChatMessage(text: text, isUser: true, timestamp: DateTime.now()),
-      );
+      _messages.add(userMessage);
       _messageController.clear();
       _isLoading = true;
     });
 
     print(
-      '📱 Chat Screen - Added user message to UI, now loading: $_isLoading',
+      '📱 Chat Screen - Added user message to UI, total messages: ${_messages.length}',
     );
-    _scrollToBottom();
+    print('📱 Chat Screen - Loading state: $_isLoading');
+
+    // Force scroll to bottom after a short delay to ensure UI is updated
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
+    });
 
     // Get AI response
     print('🤖 Chat Screen - Calling AI service...');
@@ -458,52 +473,74 @@ class _AIDoctorChatScreenState extends State<AIDoctorChatScreen> {
         .then((response) {
           print('✅ Chat Screen - Received AI response: "$response"');
           if (mounted) {
+            final aiMessage = ChatMessage(
+              text: response,
+              isUser: false,
+              timestamp: DateTime.now(),
+            );
+
             setState(() {
-              _messages.add(
-                ChatMessage(
-                  text: response,
-                  isUser: false,
-                  timestamp: DateTime.now(),
-                ),
-              );
+              _messages.add(aiMessage);
               _isLoading = false;
             });
+
             print(
-              '📱 Chat Screen - Added AI response to UI, loading: $_isLoading',
+              '📱 Chat Screen - Added AI response to UI, total messages: ${_messages.length}',
             );
-            _scrollToBottom();
+            print('📱 Chat Screen - Loading state: $_isLoading');
+
+            // Force scroll to bottom after UI update
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollToBottom();
+            });
+          } else {
+            print('❌ Chat Screen - Widget not mounted, cannot update UI');
           }
         })
         .catchError((error) {
           print('💥 Chat Screen - Error getting AI response: $error');
           if (mounted) {
+            final errorMessage = ChatMessage(
+              text:
+                  "I apologize, but I'm experiencing some technical difficulties. Please try again or consult with a real doctor for immediate concerns.",
+              isUser: false,
+              timestamp: DateTime.now(),
+            );
+
             setState(() {
-              _messages.add(
-                ChatMessage(
-                  text:
-                      "I apologize, but I'm experiencing some technical difficulties. Please try again or consult with a real doctor for immediate concerns.",
-                  isUser: false,
-                  timestamp: DateTime.now(),
-                ),
-              );
+              _messages.add(errorMessage);
               _isLoading = false;
             });
+
             print(
-              '📱 Chat Screen - Added error message to UI, loading: $_isLoading',
+              '📱 Chat Screen - Added error message to UI, total messages: ${_messages.length}',
             );
-            _scrollToBottom();
+            print('📱 Chat Screen - Loading state: $_isLoading');
+
+            // Force scroll to bottom after UI update
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollToBottom();
+            });
+          } else {
+            print('❌ Chat Screen - Widget not mounted, cannot update UI');
           }
         });
   }
 
   void _scrollToBottom() {
+    print('📜 Chat Screen - Attempting to scroll to bottom');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
+        print(
+          '📜 Chat Screen - Scrolling to position: ${_scrollController.position.maxScrollExtent}',
+        );
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
+      } else {
+        print('❌ Chat Screen - ScrollController has no clients');
       }
     });
   }

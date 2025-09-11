@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 class VideoCallService {
   // For testing, you can use Agora's test app ID
   // In production, replace with your own Agora App ID
-  static const String _appId = 'aab8b8f5a8cd4469a9d9baecd7f3a4b9';
+  static const String _appId = 'b7e4f320217c4878beff66da07be0877';
   static const String _token = ''; // Leave empty for testing
 
   RtcEngine? _engine;
@@ -14,6 +14,7 @@ class VideoCallService {
   bool _isJoined = false;
   int? _localUid;
   int? _remoteUid;
+  String? _currentChannelId;
 
   // Stream controllers for UI updates
   final StreamController<bool> _isJoinedController =
@@ -51,14 +52,47 @@ class VideoCallService {
           onJoinChannelSuccess: _onJoinChannelSuccess,
           onUserJoined: _onUserJoined,
           onUserOffline: _onUserOffline,
+          onUserMuteVideo: (RtcConnection connection, int uid, bool muted) {
+            print('🎥 onUserMuteVideo: channel=${connection.channelId} uid=$uid muted=$muted');
+          },
+          onRemoteVideoStateChanged: (RtcConnection connection, int uid, RemoteVideoState state,
+              RemoteVideoStateReason reason, int elapsed) {
+            print(
+                '🎥 onRemoteVideoStateChanged: channel=${connection.channelId} uid=$uid state=$state reason=$reason elapsed=$elapsed');
+          },
+          onConnectionStateChanged: (RtcConnection connection, ConnectionStateType state,
+              ConnectionChangedReasonType reason) {
+            print(
+                '🔌 Connection state changed: channel=${connection.channelId}, state=$state, reason=$reason');
+            if (state == ConnectionStateType.connectionStateConnected && !_isJoined) {
+              _isJoined = true;
+              _localUid = connection.localUid;
+              _isJoinedController.add(true);
+              _localUidController.add(_localUid);
+              print('✅ Marked joined from connection state change. Local UID: $_localUid');
+            }
+          },
+          onError: (ErrorCodeType err, String msg) {
+            print('🚨 Agora Error: $err - $msg');
+          },
         ),
       );
 
-      // Enable video
+      // Enable media and configure
       await _engine!.enableVideo();
+      await _engine!.enableLocalVideo(true);
+      await _engine!.enableAudio();
+      await _engine!.setDefaultAudioRouteToSpeakerphone(true);
       await _engine!.setChannelProfile(
         ChannelProfileType.channelProfileCommunication,
       );
+      await _engine!.setVideoEncoderConfiguration(const VideoEncoderConfiguration(
+        dimensions: VideoDimensions(width: 640, height: 360),
+        frameRate: 15,
+        bitrate: 0,
+        orientationMode: OrientationMode.orientationModeFixedPortrait,
+      ));
+      // Removed setDualStreamMode for SDK compatibility
 
       _isInitialized = true;
       print('✅ Agora RTC Engine initialized successfully');
@@ -72,6 +106,14 @@ class VideoCallService {
     if (!_isInitialized || _isJoined) return;
 
     try {
+      _currentChannelId = channelName;
+      // Start local preview before join for better UX
+      try {
+        await _engine!.startPreview();
+      } catch (_) {}
+      // Ensure broadcaster role explicitly
+      await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+
       await _engine!.joinChannel(
         token: _token,
         channelId: channelName,
@@ -79,10 +121,14 @@ class VideoCallService {
         options: const ChannelMediaOptions(
           clientRoleType: ClientRoleType.clientRoleBroadcaster,
           channelProfile: ChannelProfileType.channelProfileCommunication,
+          publishCameraTrack: true,
+          publishMicrophoneTrack: true,
+          autoSubscribeVideo: true,
+          autoSubscribeAudio: true,
         ),
       );
 
-      print('🔄 Joining channel: $channelName');
+      print('🔄 Joining channel: $channelName (uid=${uid ?? 0})');
     } catch (e) {
       print('❌ Failed to join channel: $e');
       rethrow;
@@ -149,14 +195,20 @@ class VideoCallService {
     _isJoinedController.add(true);
     _localUidController.add(_localUid);
 
-    print('✅ Joined channel successfully. Local UID: $_localUid');
+    print('✅ onJoinChannelSuccess: channel=${connection.channelId}, localUid=${connection.localUid}, elapsed=$elapsed');
   }
 
   void _onUserJoined(RtcConnection connection, int remoteUid, int elapsed) {
     _remoteUid = remoteUid;
     _remoteUidController.add(_remoteUid);
 
-    print('👤 Remote user joined. UID: $remoteUid');
+    print('👤 onUserJoined: channel=${connection.channelId}, remoteUid=$remoteUid, elapsed=$elapsed');
+    // Query remote video stats to ensure subscription
+    _engine?.getUserInfoByUid(remoteUid).then((info) {
+      print('ℹ️ Remote user info: uid=${info.uid}, userAccount=${info.userAccount}');
+    }).catchError((e) {
+      print('⚠️ getUserInfoByUid failed: $e');
+    });
   }
 
   void _onUserOffline(
@@ -167,7 +219,7 @@ class VideoCallService {
     _remoteUid = null;
     _remoteUidController.add(null);
 
-    print('👤 Remote user left. UID: $remoteUid, Reason: $reason');
+    print('👤 onUserOffline: channel=${connection.channelId}, remoteUid=$remoteUid, reason=$reason');
   }
 
   // UI helpers
@@ -205,6 +257,7 @@ class VideoCallService {
       );
     }
 
+    print('🖼️ Rendering remote view: channel=${_currentChannelId}, remoteUid=${_remoteUid}');
     return AgoraVideoView(
       controller: VideoViewController.remote(
         rtcEngine: _engine!,
@@ -212,7 +265,7 @@ class VideoCallService {
           uid: _remoteUid,
           sourceType: VideoSourceType.videoSourceRemote,
         ),
-        connection: RtcConnection(channelId: 'test_channel'),
+        connection: RtcConnection(channelId: _currentChannelId ?? 'test_channel'),
       ),
     );
   }

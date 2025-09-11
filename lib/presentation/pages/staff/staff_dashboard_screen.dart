@@ -460,6 +460,7 @@ class _ScheduleTile extends StatelessWidget {
         'appointmentTime': time,
         'reason': reason,
         'symptoms': symptoms,
+        'isPatient': false,
       },
     );
   }
